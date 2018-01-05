@@ -1,0 +1,149 @@
+//
+//  ViewController.swift
+//  coredata demo
+//
+//  Created by Hitesh Thummar on 01/12/17.
+//  Copyright © 2017 Hitesh Thummar. All rights reserved.
+//
+
+import UIKit
+import CoreData
+
+class ViewController: UIViewController,UITableViewDataSource,UITableViewDelegate {
+
+    var people:[NSManagedObject] = [];
+    @IBOutlet weak var tableview: UITableView!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "The List"
+        tableview.register(UITableViewCell.self, forCellReuseIdentifier: "cell");
+        
+    }
+
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else{return}
+        
+        let manageContext = appDelegate.persistentContainer.viewContext;
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Contact")
+        do
+        {
+            people = try manageContext.fetch(fetchRequest) as! [NSManagedObject]
+            self.tableview.reloadData();
+        }
+        catch let err as NSError
+        {
+            print("retrive Error--\(err)")
+        }
+    }
+    
+    func getSearchedData(str:String)
+    {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else{return}
+        
+        let manageContext = appDelegate.persistentContainer.viewContext;
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Contact")
+        
+        let pred = NSPredicate(format: "(name = %@)", str);
+        fetchRequest.predicate = pred;
+        
+        do
+        {
+            let result = try manageContext.fetch(fetchRequest);
+            print(result);
+        }
+        catch
+        {
+            
+        }
+        
+    }
+    
+    @IBAction func addName(_ sender: Any) {
+        
+        let alert = UIAlertController(title: "Name", message: "Add a aName", preferredStyle: .alert);
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) {    action in
+            
+            guard let firstName = alert.textFields?.first?.text
+            else{return}
+            
+            guard let adress = alert.textFields![1].text
+                else{return}
+            
+            guard let phone = alert.textFields![2].text
+                else{return}
+            
+            self.saveData(name: firstName ,address: adress,phone: phone);
+            self.tableview.reloadData();
+            
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil);
+        
+        alert.addTextField { (txt:UITextField) in
+            txt.placeholder = "Add name"
+        }
+        
+        alert.addTextField { (txt:UITextField) in
+            txt.placeholder = "Add address"
+        }
+        alert.addTextField { (txt:UITextField) in
+            txt.placeholder = "Add phone"
+        }
+        
+        
+        alert.addAction(saveAction);
+        alert.addAction(cancelAction);
+        
+        present(alert, animated: true, completion: nil);
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return people.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableview.dequeueReusableCell(withIdentifier: "cell", for: indexPath);
+        
+        let person = people[indexPath.row];
+        cell.textLabel?.text = person.value(forKey: "name") as? String;
+        return cell;
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let cell = tableView.cellForRow(at: indexPath);
+        self.getSearchedData(str: (cell?.textLabel?.text)!);
+        
+    }
+    
+    
+    func saveData(name:String,address:String,phone:String)
+    {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else{return}
+        
+        let manageContext = appDelegate.persistentContainer.viewContext;
+        
+        let entity = NSEntityDescription.entity(forEntityName: "Contact", in: manageContext)!;
+        let person = NSManagedObject(entity: entity, insertInto: manageContext);
+        
+        person.setValue(name, forKey: "name");
+        person.setValue(address, forKey: "address");
+        person.setValue(phone, forKey: "phone");
+        
+        do
+        {
+            try manageContext.save();
+            people.append(person);
+        }
+        catch let err as NSError
+        {
+            print("couldn't save \(err)")
+        }
+    }
+
+}
+
+
