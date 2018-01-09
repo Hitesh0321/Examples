@@ -188,7 +188,15 @@ class chatCell:UICollectionViewCell {
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-    
+    }   
     
 }
+
+
+ Alamofire.request(url, method: .post, parameters: param).responseJSON { response in
+           
+            let json = JSON(response.result.value!);
+            let dict = json.dictionaryObject! as NSDictionary
+            print("Receive Dict:---->\(dict)");
+            handlerCompletion(dict);
+        }
